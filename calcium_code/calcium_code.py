@@ -274,7 +274,15 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Run processing when user clicks "Apply" button.
         """
-        print("hello world")
+        # print("hello world")
+        
+        # this doesn't work, error showing window for some reason
+        def printHelloWorld():
+            print("Hello World")
+        b=qt.QPushButton('Print Hello World')
+        b.connect('clicked()', printHelloWorld)
+        b.styleSheet = "font-size: 24pt; color: aqua; margin: 20px"
+        b.show()
         with slicer.util.tryWithErrorDisplay("Failed to compute results.", waitCursor=True):
 
             # Compute output
