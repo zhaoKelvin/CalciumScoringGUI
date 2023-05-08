@@ -175,6 +175,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="helloButton">
+     <property name="text">
+      <string>Print Hello World</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="applyButton">
      <property name="enabled">
       <bool>false</bool>

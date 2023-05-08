@@ -146,6 +146,8 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Buttons
         self.ui.applyButton.connect('clicked(bool)', self.onApplyButton)
+        
+        self.ui.helloButton.connect('clicked(bool)', self.onHelloButton)    # connect hello button functionality from ui
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -270,19 +272,25 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         self._parameterNode.EndModify(wasModified)
 
+    def onHelloButton(self):
+        """
+        Print "Hello World" to the command line when clicked.
+        """
+        print("Hello World")
+
     def onApplyButton(self):
         """
         Run processing when user clicks "Apply" button.
         """
         # print("hello world")
         
-        # this doesn't work, error showing window for some reason
-        def printHelloWorld():
-            print("Hello World")
-        b=qt.QPushButton('Print Hello World')
-        b.connect('clicked()', printHelloWorld)
-        b.styleSheet = "font-size: 24pt; color: aqua; margin: 20px"
-        b.show()
+        # this doesn't work - instead of window/widget appearing upon clicking apply button, integrate into base GUI
+        # def printHelloWorld():
+        #     print("Hello World")
+        # b=qt.QPushButton('Print Hello World')
+        # b.connect('clicked()', printHelloWorld)
+        # b.styleSheet = "font-size: 24pt; color: aqua; margin: 20px"
+        # b.show()
         with slicer.util.tryWithErrorDisplay("Failed to compute results.", waitCursor=True):
 
             # Compute output
