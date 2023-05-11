@@ -9,6 +9,9 @@ from slicer.util import VTKObservationMixin
 
 import qt
 
+import numpy as np
+from juliacall import Main as jl
+
 # test commit
 # sami test for push pull legs
 # calcium_code
@@ -148,6 +151,13 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.applyButton.connect('clicked(bool)', self.onApplyButton)
         
         self.ui.helloButton.connect('clicked(bool)', self.onHelloButton)    # connect hello button functionality from ui
+        
+        # # import julia packages
+        # jl.seval("Pkg.add(url=\"https://github.com/Dale-Black/CalciumScoring.jl\")")
+        # jl.seval("Pkg.add(url=\"https://github.com/PainterQubits/Unitful.jl\")")
+
+        # jl.seval("using CalciumScoring")
+        # jl.seval("using Unitful: mm")
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -276,7 +286,17 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Print "Hello World" to the command line when clicked.
         """
-        print("Hello World")
+        # vol = np.zeros((4, 4, 2)) # create a 4x4x2 array with zeros
+        # vol[:, :, 0] = 400 # set values of the first slice to 400
+        # vol[:, :, 1] = 0 # set values of the second slice to 0
+        
+        # spacing = np.array([0.5, 0.5, 0.5])
+        
+        # alg = jl.Agatston()
+        
+        # agatston_score, volume_score = jl.score(vol, spacing, alg)
+        
+        # print("agatston score: ", agatston_score)
 
     def onApplyButton(self):
         """
