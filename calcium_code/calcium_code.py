@@ -10,6 +10,7 @@ from slicer.util import VTKObservationMixin
 import qt
 
 import numpy as np
+# import juliacall as jl
 from juliacall import Main as jl
 
 # test commit
@@ -117,6 +118,19 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         Called when the user opens the module the first time and the widget is initialized.
         """
         ScriptedLoadableModuleWidget.setup(self)
+        
+        import os
+        os.environ['JULIA_PKG_USE_CLI_GIT'] = 'true'
+        print(os.environ['JULIA_PKG_USE_CLI_GIT'])
+        # print(os.system("export JULIA_PKG_USE_CLI_GIT=true"))
+        # print(os.system("export JULIA_PKG_SERVER_BUILDING=false"))
+        os.environ['JULIA_SSL_CA_ROOTS_PATH'] = ""
+        print(os.environ['JULIA_SSL_CA_ROOTS_PATH'])
+        
+        # print(os.system("ENV[\"JULIA_PKG_USE_CLI_GIT\"]"))
+        # print(os.system("echo $?"))
+        
+        # os.system("export JULIA_SSL_CA_ROOTS_PATH=\"\"")
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
@@ -151,6 +165,9 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.applyButton.connect('clicked(bool)', self.onApplyButton)
         
         self.ui.helloButton.connect('clicked(bool)', self.onHelloButton)    # connect hello button functionality from ui
+
+        # Make sure parameter node is initialized (needed for module reload)
+        self.initializeParameterNode()
         
         # # import julia packages
         # jl.seval("Pkg.add(url=\"https://github.com/Dale-Black/CalciumScoring.jl\")")
@@ -158,9 +175,13 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # jl.seval("using CalciumScoring")
         # jl.seval("using Unitful: mm")
+        
+        # # import julia packages
+        jl.Pkg.add(url="https://github.com/Dale-Black/CalciumScoring.jl")
+        # jl.Pkg.add("Distributions")
 
-        # Make sure parameter node is initialized (needed for module reload)
-        self.initializeParameterNode()
+        jl.seval("using CalciumScoring")
+        # jl.seval("using Distributions")
 
     def cleanup(self):
         """
@@ -286,17 +307,18 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Print "Hello World" to the command line when clicked.
         """
-        # vol = np.zeros((4, 4, 2)) # create a 4x4x2 array with zeros
-        # vol[:, :, 0] = 400 # set values of the first slice to 400
-        # vol[:, :, 1] = 0 # set values of the second slice to 0
+        # print(jl.Normal())
+        vol = np.zeros((4, 4, 2)) # create a 4x4x2 array with zeros
+        vol[:, :, 0] = 400 # set values of the first slice to 400
+        vol[:, :, 1] = 0 # set values of the second slice to 0
         
-        # spacing = np.array([0.5, 0.5, 0.5])
+        spacing = np.array([0.5, 0.5, 0.5])
         
-        # alg = jl.Agatston()
+        alg = jl.Agatston()
         
-        # agatston_score, volume_score = jl.score(vol, spacing, alg)
+        agatston_score, volume_score = jl.score(vol, spacing, alg)
         
-        # print("agatston score: ", agatston_score)
+        print("agatston score: ", agatston_score)
 
     def onApplyButton(self):
         """
