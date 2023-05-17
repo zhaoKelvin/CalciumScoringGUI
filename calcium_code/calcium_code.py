@@ -156,6 +156,7 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
         self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+        self.ui.segmentSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
         self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
         self.ui.imageThresholdSliderWidget.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.invertOutputCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
@@ -232,6 +233,15 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
             if firstVolumeNode:
                 self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
+        
+        
+        # Select default segment node
+        if not self._parameterNode.GetNodeReference("InputSegment"):
+            firstSegmentNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLSegmentationNode")
+            if firstSegmentNode:
+                self._parameterNode.SetNodeReferenceID("InputSegment", firstSegmentNode.GetID())
+                
+        
 
     def setParameterNode(self, inputParameterNode):
         """
@@ -268,6 +278,7 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Update node selectors and sliders
         self.ui.inputSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputVolume"))
+        self.ui.segmentSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputSegment"))
         self.ui.outputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolume"))
         self.ui.invertedOutputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolumeInverse"))
         self.ui.imageThresholdSliderWidget.value = float(self._parameterNode.GetParameter("Threshold"))
@@ -280,6 +291,13 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         else:
             self.ui.applyButton.toolTip = "Select input and output volume nodes"
             self.ui.applyButton.enabled = False
+            
+        if self._parameterNode.GetNodeReference("InputSegment"):
+            self.ui.helloButton.toolTip = "Compute Agatston score"
+            self.ui.helloButton.toolTip = True
+        else:
+            self.ui.helloButton.toolTip = "Select input segment node"
+            self.ui.helloButton.toolTip = False
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -296,6 +314,7 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
         self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
+        self._parameterNode.SetNodeReferenceID("InputSegment", self.ui.segmentSelector.currentNodeID)
         self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
         self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
         self._parameterNode.SetParameter("Invert", "true" if self.ui.invertOutputCheckBox.checked else "false")
@@ -307,22 +326,29 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Print "Hello World" to the command line when clicked.
         """
-        inputVolume = self.ui.inputSelector.currentNode()
-        inputData = inputVolume.GetImageData()
-        inputDimensions = inputData.GetDimensions()         # get dimension of input
+        inputSegment = self.ui.segmentSelector.currentNode()
+        # print(dir(inputSegment))
+        print(inputSegment)
+        image = slicer.vtkOrientedImageData()
+        segmentBinaryLabelMap = inputSegment.GetBinaryLabelmapRepresentation(inputSegment.GetID(), image)
+        print(segmentBinaryLabelMap)
+        inputDimensions = segmentBinaryLabelMap.GetDimensions()         # get dimension of input
         
         # not sure if spacing is correct
-        inputSpacing = inputData.GetSpacing()               # get spacing of input
+        inputSpacing = segmentBinaryLabelMap.GetSpacing()               # get spacing of input
         
         # print(inputVolume.GetImageData().GetPointData())
         
         
-        pixelPointer = inputData.GetPointData().GetScalars()
+        pixelPointer = segmentBinaryLabelMap.GetPointData().GetScalars()
         
         pixelArray = np.frombuffer(pixelPointer, np.uint16, inputDimensions[0]*inputDimensions[1]*inputDimensions[2])
         pixelArray.reshape((inputDimensions))       # reshape scalar array to correct dimension
         
         # print(dir(inputVolume.GetImageData()))
+        
+        print(f"Input Dimension: {inputDimensions}")
+        print(f"Input Spacing: {inputSpacing}")
         
         
         vol = np.zeros((4, 4, 2)) # create a 4x4x2 array with zeros

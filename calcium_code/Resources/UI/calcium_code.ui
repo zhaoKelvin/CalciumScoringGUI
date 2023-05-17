@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>289</width>
-    <height>286</height>
+    <height>307</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -68,6 +68,40 @@
         </property>
         <property name="value">
          <double>0.500000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Select Segment:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="qMRMLNodeComboBox" name="segmentSelector">
+        <property name="toolTip">
+         <string>Pick the segment to run the selected algorithm on.</string>
+        </property>
+        <property name="nodeTypes">
+         <stringlist notr="true">
+          <string>vtkMRMLSegmentationNode</string>
+         </stringlist>
+        </property>
+        <property name="showChildNodeTypes">
+         <bool>false</bool>
+        </property>
+        <property name="hideChildNodeTypes">
+         <stringlist/>
+        </property>
+        <property name="addEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="removeEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="interactionNodeSingletonTag">
+         <string notr="true">Singleton</string>
         </property>
        </widget>
       </item>
@@ -280,6 +314,22 @@
     <hint type="destinationlabel">
      <x>173</x>
      <y>176</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>calcium_code</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>segmentSelector</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>144</x>
+     <y>153</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>196</x>
+     <y>72</y>
     </hint>
    </hints>
   </connection>
