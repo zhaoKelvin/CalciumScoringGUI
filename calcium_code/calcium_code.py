@@ -120,12 +120,12 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         ScriptedLoadableModuleWidget.setup(self)
         
         import os
-        os.environ['JULIA_PKG_USE_CLI_GIT'] = 'true'
-        print(os.environ['JULIA_PKG_USE_CLI_GIT'])
+        # os.environ['JULIA_PKG_USE_CLI_GIT'] = 'true'
+        # print(os.environ['JULIA_PKG_USE_CLI_GIT'])
         # print(os.system("export JULIA_PKG_USE_CLI_GIT=true"))
         # print(os.system("export JULIA_PKG_SERVER_BUILDING=false"))
         os.environ['JULIA_SSL_CA_ROOTS_PATH'] = ""
-        print(os.environ['JULIA_SSL_CA_ROOTS_PATH'])
+        # print(os.environ['JULIA_SSL_CA_ROOTS_PATH'])
         
         # print(os.system("ENV[\"JULIA_PKG_USE_CLI_GIT\"]"))
         # print(os.system("echo $?"))
@@ -307,7 +307,24 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Print "Hello World" to the command line when clicked.
         """
-        # print(jl.Normal())
+        inputVolume = self.ui.inputSelector.currentNode()
+        inputData = inputVolume.GetImageData()
+        inputDimensions = inputData.GetDimensions()         # get dimension of input
+        
+        # not sure if spacing is correct
+        inputSpacing = inputData.GetSpacing()               # get spacing of input
+        
+        # print(inputVolume.GetImageData().GetPointData())
+        
+        
+        pixelPointer = inputData.GetPointData().GetScalars()
+        
+        pixelArray = np.frombuffer(pixelPointer, np.uint16, inputDimensions[0]*inputDimensions[1]*inputDimensions[2])
+        pixelArray.reshape((inputDimensions))       # reshape scalar array to correct dimension
+        
+        # print(dir(inputVolume.GetImageData()))
+        
+        
         vol = np.zeros((4, 4, 2)) # create a 4x4x2 array with zeros
         vol[:, :, 0] = 400 # set values of the first slice to 400
         vol[:, :, 1] = 0 # set values of the second slice to 0
@@ -316,7 +333,8 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         
         alg = jl.Agatston()
         
-        agatston_score, volume_score = jl.score(vol, spacing, alg)
+        # still uses hard-coded spacing
+        agatston_score, volume_score = jl.score(pixelArray, spacing, alg)
         
         print("agatston score: ", agatston_score)
 
