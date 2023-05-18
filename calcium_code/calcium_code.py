@@ -324,43 +324,45 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def onHelloButton(self):
         """
-        Print "Hello World" to the command line when clicked.
+        Uses selected volume and corresponding segmentation 
+        to apply Agatston scoring algorithm to calculate agatston score.
         """
+        # access currently selected input segment and volume
         inputSegment = self.ui.segmentSelector.currentNode()
-        # print(dir(inputSegment))
-        print(inputSegment)
-        image = slicer.vtkOrientedImageData()
-        segmentBinaryLabelMap = inputSegment.GetBinaryLabelmapRepresentation(inputSegment.GetID(), image)
-        print(segmentBinaryLabelMap)
-        inputDimensions = segmentBinaryLabelMap.GetDimensions()         # get dimension of input
+        inputVolume = self.ui.inputSelector.currentNode()
         
-        # not sure if spacing is correct
-        inputSpacing = segmentBinaryLabelMap.GetSpacing()               # get spacing of input
+        # get workable image data of input volume
+        inputData = inputVolume.GetImageData()
+
+        # get first segment from selected segmentation 
+        # (will change later to allow choosing of any segment within segmentation)
+        segmentID = inputSegment.GetSegmentation().GetSegmentIDs()
+        segmentBinaryLabelMap = slicer.util.arrayFromSegmentBinaryLabelmap(inputSegment, segmentID[0])
         
-        # print(inputVolume.GetImageData().GetPointData())
+        # get dimension of input segment and input volume
+        segmentDimensions = segmentBinaryLabelMap.shape
+        inputDimensions = inputData.GetDimensions()
         
-        
-        pixelPointer = segmentBinaryLabelMap.GetPointData().GetScalars()
-        
-        pixelArray = np.frombuffer(pixelPointer, np.uint16, inputDimensions[0]*inputDimensions[1]*inputDimensions[2])
-        pixelArray.reshape((inputDimensions))       # reshape scalar array to correct dimension
-        
-        # print(dir(inputVolume.GetImageData()))
+        # get spacing from input volume
+        inputSpacing = np.array(inputData.GetSpacing())
         
         print(f"Input Dimension: {inputDimensions}")
+        print(f"Segment Dimension: {segmentDimensions}")
         print(f"Input Spacing: {inputSpacing}")
         
+        # convert input volume image data to useable pixel scalar array
+        pixelPointer = inputData.GetPointData().GetScalars()
         
-        vol = np.zeros((4, 4, 2)) # create a 4x4x2 array with zeros
-        vol[:, :, 0] = 400 # set values of the first slice to 400
-        vol[:, :, 1] = 0 # set values of the second slice to 0
+        pixelArray = np.frombuffer(pixelPointer, np.uint16, inputDimensions[0]*inputDimensions[1]*inputDimensions[2])
+        pixelArray = pixelArray.reshape((segmentDimensions))       # reshape scalar array to correct dimension
         
-        spacing = np.array([0.5, 0.5, 0.5])
+        # create overlay mask by multiplying segment binary label map by the pixel scalar array
+        overlayMask = segmentBinaryLabelMap * pixelArray
         
+        # apply Agatston algorithm
         alg = jl.Agatston()
         
-        # still uses hard-coded spacing
-        agatston_score, volume_score = jl.score(pixelArray, spacing, alg)
+        agatston_score, volume_score = jl.score(overlayMask, inputSpacing, alg)
         
         print("agatston score: ", agatston_score)
 
