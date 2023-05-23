@@ -354,7 +354,10 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         pixelPointer = inputData.GetPointData().GetScalars()
         
         pixelArray = np.frombuffer(pixelPointer, np.uint16, inputDimensions[0]*inputDimensions[1]*inputDimensions[2])
-        pixelArray = pixelArray.reshape((segmentDimensions))       # reshape scalar array to correct dimension
+        pixelArray = pixelArray.reshape((inputDimensions))       # reshape scalar array to correct dimension
+        
+        # flip binary label map to fit image
+        segmentBinaryLabelMap = np.transpose(segmentBinaryLabelMap)
         
         # create overlay mask by multiplying segment binary label map by the pixel scalar array
         overlayMask = segmentBinaryLabelMap * pixelArray
