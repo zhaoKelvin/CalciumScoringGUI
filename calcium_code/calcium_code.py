@@ -156,9 +156,9 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
         self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-        self.ui.segmentSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+        self.ui.segmentationSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
         self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-        self.ui.imageThresholdSliderWidget.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
+        self.ui.imageSegmentSliderWidget.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.invertOutputCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
         self.ui.invertedOutputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
 
@@ -235,13 +235,11 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
         
         
-        # Select default segment node
-        if not self._parameterNode.GetNodeReference("InputSegment"):
-            firstSegmentNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLSegmentationNode")
-            if firstSegmentNode:
-                self._parameterNode.SetNodeReferenceID("InputSegment", firstSegmentNode.GetID())
-                
-        
+        # Select default segmentation node
+        if not self._parameterNode.GetNodeReference("InputSegmentation"):
+            firstSegmentationNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLSegmentationNode")
+            if firstSegmentationNode:
+                self._parameterNode.SetNodeReferenceID("InputSegmentation", firstSegmentationNode.GetID())
 
     def setParameterNode(self, inputParameterNode):
         """
@@ -278,10 +276,10 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Update node selectors and sliders
         self.ui.inputSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputVolume"))
-        self.ui.segmentSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputSegment"))
+        self.ui.segmentationSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputSegmentation"))
         self.ui.outputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolume"))
         self.ui.invertedOutputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolumeInverse"))
-        self.ui.imageThresholdSliderWidget.value = float(self._parameterNode.GetParameter("Threshold"))
+        self.ui.imageSegmentSliderWidget.value = float(self._parameterNode.GetParameter("Segment"))
         self.ui.invertOutputCheckBox.checked = (self._parameterNode.GetParameter("Invert") == "true")
 
         # Update buttons states and tooltips
@@ -292,13 +290,13 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.applyButton.toolTip = "Select input and output volume nodes"
             self.ui.applyButton.enabled = False
             
-        if self._parameterNode.GetNodeReference("InputSegment"):
+        if self._parameterNode.GetNodeReference("InputSegmentation"):
             self.ui.helloButton.toolTip = "Compute Agatston score"
             self.ui.helloButton.toolTip = True
         else:
-            self.ui.helloButton.toolTip = "Select input segment node"
+            self.ui.helloButton.toolTip = "Select input segmentation node"
             self.ui.helloButton.toolTip = False
-
+            
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
 
@@ -314,9 +312,9 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
         self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
-        self._parameterNode.SetNodeReferenceID("InputSegment", self.ui.segmentSelector.currentNodeID)
+        self._parameterNode.SetNodeReferenceID("InputSegmentation", self.ui.segmentationSelector.currentNodeID)
         self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
-        self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
+        self._parameterNode.SetParameter("Segment", str(self.ui.imageSegmentSliderWidget.value))
         self._parameterNode.SetParameter("Invert", "true" if self.ui.invertOutputCheckBox.checked else "false")
         self._parameterNode.SetNodeReferenceID("OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID)
 
@@ -328,16 +326,17 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         to apply Agatston scoring algorithm to calculate agatston score.
         """
         # access currently selected input segment and volume
-        inputSegment = self.ui.segmentSelector.currentNode()
+        inputSegmentation = self.ui.segmentationSelector.currentNode()
         inputVolume = self.ui.inputSelector.currentNode()
+        inputSegment = int(self.ui.imageSegmentSliderWidget.value)
         
         # get workable image data of input volume
         inputData = inputVolume.GetImageData()
 
         # get first segment from selected segmentation 
         # (will change later to allow choosing of any segment within segmentation)
-        segmentID = inputSegment.GetSegmentation().GetSegmentIDs()
-        segmentBinaryLabelMap = slicer.util.arrayFromSegmentBinaryLabelmap(inputSegment, segmentID[0])
+        segmentID = inputSegmentation.GetSegmentation().GetSegmentIDs()
+        segmentBinaryLabelMap = slicer.util.arrayFromSegmentBinaryLabelmap(inputSegmentation, segmentID[inputSegment])
         
         # get dimension of input segment and input volume
         segmentDimensions = segmentBinaryLabelMap.shape
@@ -346,6 +345,7 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # get spacing from input volume
         inputSpacing = np.array(inputData.GetSpacing())
         
+        print(f"Input Segment ID: {segmentID[inputSegment]}")
         print(f"Input Dimension: {inputDimensions}")
         print(f"Segment Dimension: {segmentDimensions}")
         print(f"Input Spacing: {inputSpacing}")
@@ -386,13 +386,13 @@ class calcium_codeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
             # Compute output
             self.logic.process(self.ui.inputSelector.currentNode(), self.ui.outputSelector.currentNode(),
-                               self.ui.imageThresholdSliderWidget.value, self.ui.invertOutputCheckBox.checked)
+                               self.ui.imageSegmentSliderWidget.value, self.ui.invertOutputCheckBox.checked)
 
             # Compute inverted output (if needed)
             if self.ui.invertedOutputSelector.currentNode():
                 # If additional output volume is selected then result with inverted threshold is written there
                 self.logic.process(self.ui.inputSelector.currentNode(), self.ui.invertedOutputSelector.currentNode(),
-                                   self.ui.imageThresholdSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
+                                   self.ui.imageSegmentSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
 
 
 #
@@ -419,18 +419,18 @@ class calcium_codeLogic(ScriptedLoadableModuleLogic):
         """
         Initialize parameter node with default settings.
         """
-        if not parameterNode.GetParameter("Threshold"):
-            parameterNode.SetParameter("Threshold", "100.0")
+        if not parameterNode.GetParameter("Segment"):
+            parameterNode.SetParameter("Segment", "100.0")
         if not parameterNode.GetParameter("Invert"):
             parameterNode.SetParameter("Invert", "false")
 
-    def process(self, inputVolume, outputVolume, imageThreshold, invert=False, showResult=True):
+    def process(self, inputVolume, outputVolume, imageSegment, invert=False, showResult=True):
         """
         Run the processing algorithm.
         Can be used without GUI widget.
         :param inputVolume: volume to be thresholded
         :param outputVolume: thresholding result
-        :param imageThreshold: values above/below this threshold will be set to 0
+        :param imageSegment: values above/below this threshold will be set to 0
         :param invert: if True then values above the threshold will be set to 0, otherwise values below are set to 0
         :param showResult: show output volume in slice viewers
         """
@@ -442,12 +442,12 @@ class calcium_codeLogic(ScriptedLoadableModuleLogic):
         startTime = time.time()
         logging.info('Processing started')
 
-        # Compute the thresholded output volume using the "Threshold Scalar Volume" CLI module
+        # Compute the thresholded output volume using the "Segment Scalar Volume" CLI module
         cliParams = {
             'InputVolume': inputVolume.GetID(),
             'OutputVolume': outputVolume.GetID(),
-            'ThresholdValue': imageThreshold,
-            'ThresholdType': 'Above' if invert else 'Below'
+            'SegmentValue': imageSegment,
+            'SegmentType': 'Above' if invert else 'Below'
         }
         cliNode = slicer.cli.run(slicer.modules.thresholdscalarvolume, None, cliParams, wait_for_completion=True, update_display=showResult)
         # We don't need the CLI module node anymore, remove it to not clutter the scene with it

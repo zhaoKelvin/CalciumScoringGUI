@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>289</width>
-    <height>307</height>
+    <width>317</width>
+    <height>334</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -45,43 +45,17 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Image threshold:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="ctkSliderWidget" name="imageThresholdSliderWidget">
-        <property name="toolTip">
-         <string>Set threshold value for computing the output image. Voxels that have intensities lower than this value will set to zero.</string>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="minimum">
-         <double>-100.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>500.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.500000000000000</double>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>Select Segment:</string>
+         <string>Select Segmentation:</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="qMRMLNodeComboBox" name="segmentSelector">
+       <widget class="qMRMLNodeComboBox" name="segmentationSelector">
         <property name="toolTip">
-         <string>Pick the segment to run the selected algorithm on.</string>
+         <string>Pick the segmentation to run the selected algorithm on.</string>
         </property>
         <property name="nodeTypes">
          <stringlist notr="true">
@@ -102,6 +76,35 @@
         </property>
         <property name="interactionNodeSingletonTag">
          <string notr="true">Singleton</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Select Segment:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="ctkSliderWidget" name="imageSegmentSliderWidget">
+        <property name="toolTip">
+         <string>Select segment number from segmentation.</string>
+        </property>
+        <property name="decimals">
+         <number>0</number>
+        </property>
+        <property name="singleStep">
+         <double>1.000000000000000</double>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.500000000000000</double>
         </property>
        </widget>
       </item>
@@ -320,7 +323,7 @@
   <connection>
    <sender>calcium_code</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>segmentSelector</receiver>
+   <receiver>segmentationSelector</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
    <hints>
     <hint type="sourcelabel">
