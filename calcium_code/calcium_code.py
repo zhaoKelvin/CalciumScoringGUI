@@ -420,7 +420,7 @@ class calcium_codeLogic(ScriptedLoadableModuleLogic):
         Initialize parameter node with default settings.
         """
         if not parameterNode.GetParameter("Segment"):
-            parameterNode.SetParameter("Segment", "100.0")
+            parameterNode.SetParameter("Segment", "0.0")
         if not parameterNode.GetParameter("Invert"):
             parameterNode.SetParameter("Invert", "false")
 
